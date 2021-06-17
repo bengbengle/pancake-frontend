@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js'
 import { DEFAULT_GAS_LIMIT, DEFAULT_TOKEN_DECIMAL } from 'config'
 import { ethers } from 'ethers'
 import pools from 'config/constants/pools'
-import { getWeb3WithArchivedNodeProvider } from './web3'
+import { web3WithArchivedNodeProvider } from './web3'
 import { BIG_TEN, BIG_ZERO } from './bigNumber'
 import { getSouschefV2Contract } from './contractHelpers'
 import makeBatchRequest from './makeBatchRequest'
@@ -126,7 +126,7 @@ export const soushHarvestBnb = async (sousChefContract, account) => {
 }
 
 export const isPoolActive = async (sousId: number, block?: number) => {
-  const contract = getSouschefV2Contract(sousId, getWeb3WithArchivedNodeProvider())
+  const contract = getSouschefV2Contract(sousId, web3WithArchivedNodeProvider)
   const [startBlockResp, endBlockResp] = (await makeBatchRequest([
     contract.methods.startBlock().call,
     contract.methods.bonusEndBlock().call,
@@ -140,11 +140,10 @@ export const isPoolActive = async (sousId: number, block?: number) => {
  * Returns the total number of pools that were active at a given block
  */
 export const getActivePools = async (block?: number) => {
-  const archivedWeb3 = getWeb3WithArchivedNodeProvider()
   const eligiblePools = pools
     .filter((pool) => pool.sousId !== 0)
     .filter((pool) => pool.isFinished === false || pool.isFinished === undefined)
-  const blockNumber = block || (await archivedWeb3.eth.getBlockNumber())
+  const blockNumber = block || (await web3WithArchivedNodeProvider.eth.getBlockNumber())
   const poolsCheck = await Promise.allSettled(eligiblePools.map(({ sousId }) => isPoolActive(sousId, blockNumber)))
 
   return poolsCheck.reduce((accum, poolCheck, index) => {
